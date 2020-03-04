@@ -8,3 +8,6 @@ def downsample(img):
 
 def preprocess(img):
     return to_grayscale(downsample(img))
+
+def transform_reward(reward):
+    return np.sign(reward)
