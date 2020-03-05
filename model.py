@@ -2,6 +2,7 @@ import keras
 
 def atari_model(n_actions):
     # We assume a theano backend here, so the "channels" are first.
+    # 4 frames each 105x80 pixels
     ATARI_SHAPE = (4, 105, 80)
 
     # With the functional API we need to define the inputs.
@@ -29,5 +30,5 @@ def atari_model(n_actions):
     filtered_output = keras.layers.merge([output, actions_input], mode='mul')
 
     self.model = keras.models.Model(input=[frames_input, actions_input], output=filtered_output)
-    optimizer = optimizer=keras.optimizers.RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
+    optimizer = keras.optimizers.RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
     self.model.compile(optimizer, loss='mse')
