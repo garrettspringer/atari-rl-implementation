@@ -3,11 +3,11 @@ from model import atari_model
 import dqn
 
 env = gym.make('BreakoutDeterministic-v4')
-# returns the starting frame
-frame = env.reset()
 env.render()
 
 for _ in range(10000):
+  # Return to the starting frame
+  frame = env.reset()
   is_done = False
   while not is_done:
     # Number of actions in the game
