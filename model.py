@@ -3,16 +3,16 @@ import numpy as np
 
 class atari_model:
     def __init__(self, n_actions):
-        # We assume a theano backend here, so the "channels" are first.
-        # 4 frames each 105x80 pixels
-        ATARI_SHAPE = (4, 105, 80)
+        # We assume a theano backend here, so the "channels" are last.
+        # 4 frames each 105x80 pixels and are greyscale so no need to worry about RGB
+        ATARI_SHAPE = (105, 80, 4)
 
         # With the functional API we need to define the inputs.
         frames_input = keras.layers.Input(ATARI_SHAPE, name='frames')
         actions_input = keras.layers.Input((n_actions,), name='mask')
 
         # Assuming that the input frames are still encoded from 0 to 255. Transforming to [0, 1].
-        normalized = keras.layers.Lambda(lambda x: x / 255.0)(frames_input)
+        normalized = keras.layers.Lambda(lambda x: x / 255.0, output_shape=ATARI_SHAPE)(frames_input)
     
         # "The first hidden layer convolves 16 8×8 filters with stride 4 with the input image and applies a rectifier nonlinearity."
         conv_1 = keras.layers.convolutional.Conv2D(
