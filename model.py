@@ -31,7 +31,7 @@ class atari_model:
         # Finally, we multiply the output by the mask!
         filtered_output = keras.layers.multiply([output, actions_input])
 
-        self.model = keras.models.Model(input=[frames_input, actions_input], output=filtered_output)
+        self.model = keras.models.Model(inputs=[frames_input, actions_input], outputs=filtered_output)
         optimizer = keras.optimizers.RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
         self.model.compile(optimizer, loss='mse')
     
