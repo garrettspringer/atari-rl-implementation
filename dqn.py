@@ -12,6 +12,9 @@ def get_epsilon_for_iteration(iteration):
     else:
         return (1111111.11-iteration)/1111111.11
 
+def choose_best_action(model, state):
+    return model.predict(state)
+
 def q_iteration(env, model, state, iteration, memory):
     # Choose epsilon based on the iteration
     epsilon = get_epsilon_for_iteration(iteration)
