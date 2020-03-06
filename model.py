@@ -29,7 +29,7 @@ class atari_model:
         # "The output layer is a fully-connected linear layer with a single output for each valid action."
         output = keras.layers.Dense(n_actions)(hidden)
         # Finally, we multiply the output by the mask!
-        filtered_output = keras.layers.merge([output, actions_input], mode='mul')
+        filtered_output = keras.layers.multiply([output, actions_input])
 
         self.model = keras.models.Model(input=[frames_input, actions_input], output=filtered_output)
         optimizer = keras.optimizers.RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
