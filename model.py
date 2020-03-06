@@ -47,10 +47,10 @@ class atari_model:
         else:
             return (1111111.11-iteration)/1111111.11
 
-    def choose_best_action(self, model, state):
-        return model.predict(state)
+    def choose_best_action(self, state):
+        return self.model.predict(state)
 
-    def q_iteration(self, env, model, state, iteration, memory):
+    def q_iteration(self, env, state, iteration, memory):
         # Choose epsilon based on the iteration
         epsilon = get_epsilon_for_iteration(iteration)
 
@@ -58,7 +58,7 @@ class atari_model:
         if random.random() < epsilon:
             action = env.action_space.sample()
         else:
-            action = choose_best_action(model, state)
+            action = choose_best_action(self.model, state)
 
         # Play one game iteration (note: according to the next paper, you should actually play 4 times here)
         new_frame, reward, is_done, _ = env.step(action)
@@ -66,9 +66,9 @@ class atari_model:
 
         # Sample and fit
         batch = memory.sample_batch(32)
-        fit_batch(model, batch)
+        fit_batch(self.model, batch)
 
-    def fit_batch(self, model, gamma, start_states, actions, rewards, next_states, is_terminal):
+    def fit_batch(self, gamma, start_states, actions, rewards, next_states, is_terminal):
         """Do one deep Q learning iteration.
         Params:
         - model: The DQN
@@ -87,7 +87,7 @@ class atari_model:
         Q_values = rewards + gamma * np.max(next_Q_values, axis=1)
         # Fit the keras model. Note how we are passing the actions as the mask and multiplying
         # the targets by the actions.
-        model.fit(
+        self.model.fit(
             [start_states, actions], actions * Q_values[:, None],
             nb_epoch=1, batch_size=len(start_states), verbose=0
         )
