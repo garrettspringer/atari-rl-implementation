@@ -15,12 +15,12 @@ class atari_model:
         normalized = keras.layers.Lambda(lambda x: x / 255.0)(frames_input)
     
         # "The first hidden layer convolves 16 8×8 filters with stride 4 with the input image and applies a rectifier nonlinearity."
-        conv_1 = keras.layers.convolutional.Convolution2D(
-            16, 8, 8, subsample=(4, 4), activation='relu'
+        conv_1 = keras.layers.convolutional.Conv2D(
+            16, (8, 8), activation="relu", strides=(4, 4)
         )(normalized)
         # "The second hidden layer convolves 32 4×4 filters with stride 2, again followed by a rectifier nonlinearity."
-        conv_2 = keras.layers.convolutional.Convolution2D(
-            32, 4, 4, subsample=(2, 2), activation='relu'
+        conv_2 = keras.layers.convolutional.Conv2D(
+            32, (4, 4), activation="relu", strides=(2, 2)
         )(conv_1)
         # Flattening the second convolutional layer.
         conv_flattened = keras.layers.core.Flatten()(conv_2)
