@@ -1,5 +1,17 @@
 import numpy as np
 
+def get_epsilon_for_iteration(iteration):
+    """
+    Returns the learning rate (epislon) for the iteration
+    Scales from 1 to 0.1 linearly, then remains fixed at 0.1 
+    """
+    if (iteration >= 1000000):
+        return 0.1
+    elif (iteration == 0):
+        return 1.0
+    else:
+        return (1111111.11-iteration)/1111111.11
+
 def q_iteration(env, model, state, iteration, memory):
     # Choose epsilon based on the iteration
     epsilon = get_epsilon_for_iteration(iteration)
