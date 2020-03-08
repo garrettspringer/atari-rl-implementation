@@ -62,11 +62,12 @@ class atari_model:
 
         # Play one game iteration (note: according to the next paper, you should actually play 4 times here)
         new_frame, reward, is_done, _ = env.step(action)
-        memory.add(state, action, new_frame, reward, is_done)
+        mem = IndividualMemory(state, action, new_frame, reward, is_done)
+        memory.add(mem)
 
         # Sample and fit
         batch = memory.sample_batch(32)
-        fit_batch(self.model, batch)
+        self.fit_batch(0.99, batch.start_states, self.model, batch)
 
     def fit_batch(self, gamma, start_states, actions, rewards, next_states, is_terminal):
         """Do one deep Q learning iteration.
