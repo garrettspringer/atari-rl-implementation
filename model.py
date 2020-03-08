@@ -2,6 +2,7 @@ import keras
 import numpy as np
 import random
 from memory import IndividualMemory
+from utils import preprocess, to_grayscale
 
 class atari_model:
     def __init__(self, n_actions):
@@ -66,9 +67,11 @@ class atari_model:
                 action = choose_best_action(self.model, state)
 
             new_frame, reward, is_done, _ = env.step(action)
+            new_frame = preprocess(new_frame)
             mem = IndividualMemory(state, action, new_frame, reward, is_done)
             memory.append(mem)
             env.render()
+            state = new_frame
 
         # Sample and fit
         sample_mem_size = 32
@@ -96,7 +99,7 @@ class atari_model:
         - is_terminal: numpy boolean array of whether the resulting state is terminal
         """
         # First, predict the Q values of the next states. Note how we are passing ones as the mask.
-        next_Q_values = model.predict([next_states, np.ones(actions.shape)])
+        next_Q_values = self.model.predict([next_states, np.ones(actions.shape)])
         # The Q values of the terminal states is 0 by definition, so override them
         next_Q_values[is_terminal] = 0
         # The Q values of each start state is the reward + gamma * the max next state Q value
