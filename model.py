@@ -66,6 +66,7 @@ class atari_model:
             new_frame, reward, is_done, _ = env.step(action)
             mem = IndividualMemory(state, action, new_frame, reward, is_done)
             memory.add(mem)
+            env.render()
 
         # Sample and fit
         batch = memory.sample_batch(32)
