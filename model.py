@@ -67,18 +67,20 @@ class atari_model:
 
             new_frame, reward, is_done, _ = env.step(action)
             mem = IndividualMemory(state, action, new_frame, reward, is_done)
-            memory.add(mem)
+            memory.append(mem)
             env.render()
 
         # Sample and fit
-        batch = memory.sample_batch(32)
-        start_states = np.array([i.start_state for i in batch])
-        actions = np.array([i.action for i in batch])
-        actions_shape = (actions.size, actions.max()+1)
-        actions = np.zeros(actions_shape)
-        rewards = np.array([i.reward for i in batch])
-        next_states = np.array([i.next_state for i in batch])
-        is_terminal = np.array([i.is_done for i in batch])
+        sample_mem_size = 32
+        if memory.end >= sample_mem_size:
+            batch = memory.sample_batch(sample_mem_size)
+            start_states = np.array([i.start_state for i in batch])
+            actions = np.array([i.action for i in batch])
+            actions_shape = (actions.size, actions.max()+1)
+            actions = np.zeros(actions_shape)
+            rewards = np.array([i.reward for i in batch])
+            next_states = np.array([i.new_state for i in batch])
+            is_terminal = np.array([i.is_done for i in batch])
 
         self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal) 
 
