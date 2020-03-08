@@ -1,3 +1,5 @@
+from random import randint
+
 class IndividualMemory:
     def __init__(self, start_state, action, new_state, reward, is_done):
         self.start_state = start_state
@@ -26,7 +28,7 @@ class RingBuf:
     def sample_batch(self, num_of_elements):
         batch = []
         for i in range(num_of_elements):
-            batch.append(self.__getitem__(random.randint(0,1000000)))
+            batch.append(self.__getitem__(randint(0,1000000)))
         return batch
         
     def __getitem__(self, idx):
