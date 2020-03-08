@@ -52,7 +52,7 @@ class atari_model:
 
     def q_iteration(self, env, state, iteration, memory):
         # Choose epsilon based on the iteration
-        epsilon = get_epsilon_for_iteration(iteration)
+        epsilon = self.get_epsilon_for_iteration(iteration)
 
         # Choose the action 
         # Play one game iteration (note: according to the next paper, you should actually play 4 times here)
