@@ -67,7 +67,15 @@ class atari_model:
 
         # Sample and fit
         batch = memory.sample_batch(32)
-        self.fit_batch(0.99, batch.start_states, self.model, batch)
+        start_states = np.array([i.start_state for i in batch])
+        actions = np.array([i.action for i in batch])
+        actions_shape = (actions.size, actions.max()+1)
+        actions = np.zeros(actions_shape)
+        rewards = np.array([i.reward for i in batch])
+        next_states = np.array([i.next_state for i in batch])
+        is_terminal = np.array([i.is_done for i in batch])
+
+        self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal) 
 
     def fit_batch(self, gamma, start_states, actions, rewards, next_states, is_terminal):
         """Do one deep Q learning iteration.
