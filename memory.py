@@ -14,6 +14,12 @@ class RingBuf:
         # too many element. Remove the first element by incrementing start.
         if self.end == self.start:
             self.start = (self.start + 1) % len(self.data)
+
+    def sample_batch(self, num_of_elements):
+        batch = []
+        for i in range(num_of_elements):
+            batch.append(self.__getitem__(random.randint(0,1000000)))
+        return batch
         
     def __getitem__(self, idx):
         return self.data[(self.start + idx) % len(self.data)]
