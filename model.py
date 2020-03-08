@@ -61,9 +61,11 @@ class atari_model:
             action = choose_best_action(self.model, state)
 
         # Play one game iteration (note: according to the next paper, you should actually play 4 times here)
-        new_frame, reward, is_done, _ = env.step(action)
-        mem = IndividualMemory(state, action, new_frame, reward, is_done)
-        memory.add(mem)
+        is_done = False
+        while not is_done:
+            new_frame, reward, is_done, _ = env.step(action)
+            mem = IndividualMemory(state, action, new_frame, reward, is_done)
+            memory.add(mem)
 
         # Sample and fit
         batch = memory.sample_batch(32)
