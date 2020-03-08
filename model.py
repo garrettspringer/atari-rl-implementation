@@ -55,14 +55,14 @@ class atari_model:
         epsilon = get_epsilon_for_iteration(iteration)
 
         # Choose the action 
-        if random.random() < epsilon:
-            action = env.action_space.sample()
-        else:
-            action = choose_best_action(self.model, state)
-
         # Play one game iteration (note: according to the next paper, you should actually play 4 times here)
         is_done = False
         while not is_done:
+            if random.random() < epsilon:
+                action = env.action_space.sample()
+            else:
+                action = choose_best_action(self.model, state)
+
             new_frame, reward, is_done, _ = env.step(action)
             mem = IndividualMemory(state, action, new_frame, reward, is_done)
             memory.add(mem)
