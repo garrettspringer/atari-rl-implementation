@@ -1,6 +1,7 @@
 import keras
 import numpy as np
 import random
+from memory import IndividualMemory
 
 class atari_model:
     def __init__(self, n_actions):
