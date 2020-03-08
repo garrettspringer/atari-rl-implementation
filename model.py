@@ -1,5 +1,6 @@
 import keras
 import numpy as np
+import random
 
 class atari_model:
     def __init__(self, n_actions):
