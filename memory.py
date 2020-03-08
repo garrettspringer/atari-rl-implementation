@@ -1,3 +1,11 @@
+class IndividualMemory:
+    def __init__(self, start_state, action, new_state, reward, is_done):
+        self.start_state = start_state
+        self.action = action
+        self.new_state = new_state
+        self.reward = reward
+        self.is_done = is_done
+
 class RingBuf:
     def __init__(self, size):
         # allocate one extra element, this way, self.start == self.end always means 
@@ -6,7 +14,7 @@ class RingBuf:
         self.data = [None] * (size + 1)
         self.start = 0
         self.end = 0
-        
+
     def append(self, element):
         self.data[self.end] = element
         self.end = (self.end + 1) % len(self.data)
