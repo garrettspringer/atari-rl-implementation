@@ -1,12 +1,15 @@
 import keras
 import numpy as np
 import random
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from memory import IndividualMemory
 from utils import preprocess, to_grayscale
 
 class atari_model:
-    def __init__(self, n_actions):
+    def __init__(self, actions, n_actions):
         self.state_list = []
+        self.actions = actions
+        self.n_actions = n_actions
         ATARI_SHAPE = (4, 105, 80)
 
         # With the functional API we need to define the inputs.
@@ -50,7 +53,9 @@ class atari_model:
             return (1111111.11-iteration)/1111111.11
 
     def choose_best_action(self, state):
-        return self.model.predict(state)
+        actions_shape = (1, self.n_actions+1)
+        actions = np.zeros(actions_shape)
+        return self.model.predict([state, actions])
 
     def warmup(self, env, iterations, memory):
         print("Beginning Warmup")
@@ -58,29 +63,38 @@ class atari_model:
             frame = preprocess(env.reset())
             is_done = False
             self.state_list = [frame]
-            while not is_done:
-                for i in range(3):
-                    new_frame, reward, is_done, _ = env.step(env.action_space.sample())
-                    self.state_list.append(preprocess(new_frame))
-                    env.render()
 
+            # Need 4 Frames for initial state and following 4 Frames for next state
+            for i in range(6):
+                new_frame, reward, is_done, _ = env.step(env.action_space.sample())
+                self.state_list.append(preprocess(new_frame))
+                env.render()
+
+            while not is_done:
+                new_frame, reward, is_done, _ = env.step(env.action_space.sample())
+                self.state_list.append(preprocess(new_frame))
+                env.render()
+                
+                #self.choose_best_action([self.state_list[len(self.state_list)-4:len(self.state_list)]]) # FIXME Debugging line, delete
 
                 action = env.action_space.sample()
                 new_frame, reward, is_done, _ = env.step(action)
+                self.state_list.append(preprocess(new_frame))
+                env.render()
 
-                mem = IndividualMemory(self.state_list[len(self.state_list)-4:len(self.state_list)], action, new_frame, reward, is_done)
+                mem = IndividualMemory(
+                    self.state_list[len(self.state_list)-8:len(self.state_list)-4], 
+                    action, 
+                    self.state_list[len(self.state_list)-4:len(self.state_list)], 
+                    reward, 
+                    is_done)
                 memory.append(mem)
 
                 if is_done:
                     break
-
-                self.state_list.append(new_frame)
-                env.render()
         
         print("Warmup Completed")
             
-
-
 
     def q_iteration(self, env, state, iteration, memory):
         # Choose epsilon based on the iteration
@@ -107,9 +121,12 @@ class atari_model:
         if memory.end >= sample_mem_size:
             batch = memory.sample_batch(sample_mem_size)
             start_states = np.array([i.start_state for i in batch])
+
             actions = np.array([i.action for i in batch])
-            actions_shape = (actions.size, actions.max()+1)
-            actions = np.zeros(actions_shape)
+            actions_shape = np.zeros((actions.size, actions.max()+1))
+            actions_shape[np.arange(actions.size), actions] = 1
+            actions = actions_shape
+
             rewards = np.array([i.reward for i in batch])
             next_states = np.array([i.new_state for i in batch])
             is_terminal = np.array([i.is_done for i in batch])
