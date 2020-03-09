@@ -52,6 +52,36 @@ class atari_model:
     def choose_best_action(self, state):
         return self.model.predict(state)
 
+    def warmup(self, env, iterations, memory):
+        print("Beginning Warmup")
+        for i in range(iterations):
+            frame = preprocess(env.reset())
+            is_done = False
+            self.state_list = [frame]
+            while not is_done:
+                for i in range(4):
+                    new_frame, reward, is_done, _ = env.step(env.action_space.sample())
+                    self.state_list.append(preprocess(new_frame))
+                    env.render()
+
+
+                action = env.action_space.sample()
+                new_frame, reward, is_done, _ = env.step(action)
+
+                mem = IndividualMemory(self.state_list[len(self.state_list)-4:len(self.state_list)], action, new_frame, reward, is_done)
+                memory.append(mem)
+
+                if is_done:
+                    break
+
+                self.state_list.append(new_frame)
+                env.render()
+        
+        print("Warmup Completed")
+            
+
+
+
     def q_iteration(self, env, state, iteration, memory):
         # Choose epsilon based on the iteration
         epsilon = self.get_epsilon_for_iteration(iteration)
