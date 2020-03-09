@@ -6,9 +6,7 @@ from utils import preprocess, to_grayscale
 
 class atari_model:
     def __init__(self, n_actions):
-        # We assume a theano backend here, so the "channels" are last.
-        # 4 frames each 105x80 pixels and are greyscale so no need to worry about RGB
-        ATARI_SHAPE = (105, 80, 4)
+        ATARI_SHAPE = (4, 105, 80)
 
         # With the functional API we need to define the inputs.
         frames_input = keras.layers.Input(ATARI_SHAPE, name='frames')
@@ -26,7 +24,7 @@ class atari_model:
             32, (4, 4), activation="relu", strides=(2, 2)
         )(conv_1)
         # Flattening the second convolutional layer.
-        conv_flattened = keras.layers.core.Flatten()(conv_2)
+        conv_flattened = keras.layers.core.Flatten("channels_first")(conv_2)
         # "The final hidden layer is fully-connected and consists of 256 rectifier units."
         hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
         # "The output layer is a fully-connected linear layer with a single output for each valid action."
@@ -60,17 +58,22 @@ class atari_model:
         # Choose the action 
         # Play one game iteration (note: according to the next paper, you should actually play 4 times here)
         is_done = False
+        state_list = [state]
         while not is_done:
-            if random.random() < epsilon:
+            if random.random() < epsilon or len(state_list) < 4:
                 action = env.action_space.sample()
             else:
-                action = choose_best_action(self.model, state)
+                action = self.choose_best_action(state_list[len(state_list)-4:len(state_list)])
 
             new_frame, reward, is_done, _ = env.step(action)
             new_frame = preprocess(new_frame)
-            mem = IndividualMemory(state, action, new_frame, reward, is_done)
-            memory.append(mem)
+
+            if len(state_list) > 3:
+                mem = IndividualMemory(state_list[len(state_list)-4:len(state_list)], action, new_frame, reward, is_done)
+                memory.append(mem)
+
             env.render()
+            state_list.append(new_frame)
             state = new_frame
 
         # Sample and fit
@@ -85,7 +88,8 @@ class atari_model:
             next_states = np.array([i.new_state for i in batch])
             is_terminal = np.array([i.is_done for i in batch])
 
-        self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal) 
+        # Start states need to be the starting possibilities for the VERY BEGINNING of a game FIXME
+        self.fit_batch(0.99, start_states, actions, rewards, start_states, is_terminal) 
 
     def fit_batch(self, gamma, start_states, actions, rewards, next_states, is_terminal):
         """Do one deep Q learning iteration.
