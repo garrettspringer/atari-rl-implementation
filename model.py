@@ -52,6 +52,9 @@ class atari_model:
         else:
             return (1111111.11-iteration)/1111111.11
 
+    def previous_state(self):
+        return self.state_list[len(self.state_list)-4:len(self.state_list)]
+
     def choose_best_action(self, state):
         actions = np.ones((1, self.n_actions))
 
