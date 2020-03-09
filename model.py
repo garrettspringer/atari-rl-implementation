@@ -3,7 +3,7 @@ import numpy as np
 import random
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from memory import IndividualMemory
-from utils import preprocess, to_grayscale
+from utils import preprocess, to_grayscale, transform_reward
 
 class atari_model:
     def __init__(self, actions, n_actions):
@@ -88,7 +88,7 @@ class atari_model:
                     self.state_list[len(self.state_list)-8:len(self.state_list)-4], 
                     action, 
                     self.state_list[len(self.state_list)-4:len(self.state_list)], 
-                    reward, 
+                    transform_reward(reward), 
                     is_done)
                 memory.append(mem)
 
@@ -110,12 +110,14 @@ class atari_model:
                 action = self.choose_best_action([state, self.actions])
 
             new_frame, reward, is_done, _ = env.step(action)
+
             if is_done:
                 break
+
             self.state_list.append(preprocess(new_frame))
             env.render()
 
-        mem = IndividualMemory(state, action, self.state_list[len(self.state_list)-4:len(self.state_list)], reward, is_done)
+        mem = IndividualMemory(state, action, self.state_list[len(self.state_list)-4:len(self.state_list)], transform_reward(reward), is_done)
         memory.append(mem)
 
         # Sample and fit
