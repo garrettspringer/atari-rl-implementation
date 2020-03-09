@@ -53,9 +53,10 @@ class atari_model:
             return (1111111.11-iteration)/1111111.11
 
     def choose_best_action(self, state):
-        actions_shape = (1, self.n_actions+1)
-        actions = np.zeros(actions_shape)
-        return self.model.predict([state, actions])
+        actions = np.ones((1, self.n_actions))
+
+        output = self.model.predict([state, actions])
+        return np.argmax(output)
 
     def warmup(self, env, iterations, memory):
         print("Beginning Warmup")
@@ -75,8 +76,6 @@ class atari_model:
                 self.state_list.append(preprocess(new_frame))
                 env.render()
                 
-                #self.choose_best_action([self.state_list[len(self.state_list)-4:len(self.state_list)]]) # FIXME Debugging line, delete
-
                 action = env.action_space.sample()
                 new_frame, reward, is_done, _ = env.step(action)
                 self.state_list.append(preprocess(new_frame))
