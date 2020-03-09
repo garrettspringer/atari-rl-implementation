@@ -112,5 +112,5 @@ class atari_model:
         # the targets by the actions.
         self.model.fit(
             [start_states, actions], actions * Q_values[:, None],
-            nb_epoch=1, batch_size=len(start_states), verbose=0
+            epochs=1, batch_size=len(start_states), verbose=0
         )
