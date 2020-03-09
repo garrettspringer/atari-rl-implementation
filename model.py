@@ -6,6 +6,7 @@ from utils import preprocess, to_grayscale
 
 class atari_model:
     def __init__(self, n_actions):
+        self.state_list = []
         ATARI_SHAPE = (4, 105, 80)
 
         # With the functional API we need to define the inputs.
@@ -55,26 +56,21 @@ class atari_model:
         # Choose epsilon based on the iteration
         epsilon = self.get_epsilon_for_iteration(iteration)
 
-        # Choose the action 
         # Play one game iteration (note: according to the next paper, you should actually play 4 times here)
-        is_done = False
-        state_list = [state]
-        while not is_done:
-            if random.random() < epsilon or len(state_list) < 4:
+        for i in range(4):
+            if random.random() < epsilon:
                 action = env.action_space.sample()
             else:
-                action = self.choose_best_action(state_list[len(state_list)-4:len(state_list)])
+                action = self.choose_best_action([state, self.actions])
 
             new_frame, reward, is_done, _ = env.step(action)
-            new_frame = preprocess(new_frame)
-
-            if len(state_list) > 3:
-                mem = IndividualMemory(state_list[len(state_list)-4:len(state_list)], action, new_frame, reward, is_done)
-                memory.append(mem)
-
+            if is_done:
+                break
+            self.state_list.append(preprocess(new_frame))
             env.render()
-            state_list.append(new_frame)
-            state = new_frame
+
+        mem = IndividualMemory(state, action, self.state_list[len(self.state_list)-4:len(self.state_list)], reward, is_done)
+        memory.append(mem)
 
         # Sample and fit
         sample_mem_size = 32
@@ -88,8 +84,9 @@ class atari_model:
             next_states = np.array([i.new_state for i in batch])
             is_terminal = np.array([i.is_done for i in batch])
 
-        # Start states need to be the starting possibilities for the VERY BEGINNING of a game FIXME
-        self.fit_batch(0.99, start_states, actions, rewards, start_states, is_terminal) 
+            self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal) 
+
+        return is_done
 
     def fit_batch(self, gamma, start_states, actions, rewards, next_states, is_terminal):
         """Do one deep Q learning iteration.

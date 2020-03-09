@@ -9,5 +9,6 @@ def downsample(img):
 def preprocess(img):
     return to_grayscale(downsample(img))
 
+# I need to add this to my code FIXME
 def transform_reward(reward):
     return np.sign(reward)
