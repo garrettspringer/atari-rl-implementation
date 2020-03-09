@@ -59,7 +59,7 @@ class atari_model:
             is_done = False
             self.state_list = [frame]
             while not is_done:
-                for i in range(4):
+                for i in range(3):
                     new_frame, reward, is_done, _ = env.step(env.action_space.sample())
                     self.state_list.append(preprocess(new_frame))
                     env.render()
