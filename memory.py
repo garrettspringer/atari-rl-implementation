@@ -34,7 +34,7 @@ class RingBuf:
     def sample_batch(self, num_of_elements):
         batch = []
         for i in range(num_of_elements):
-            batch.append(self.__getitem__(randint(0, self.n_valid_elements)))
+            batch.append(self.__getitem__(randint(0, self.n_valid_elements-1)))
         return batch
         
     def __getitem__(self, idx):
