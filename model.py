@@ -158,11 +158,7 @@ class atari_model:
             sample_mem_size = 32
             if memory.n_valid_elements >= sample_mem_size:
                 batch = memory.sample_batch(sample_mem_size)
-
                 start_states = np.array([i.start_state for i in batch])
-                print(start_states.ndim) # debugging, FIXME
-                if start_states.ndim == 1:
-                    print(start_states)
 
                 actions = np.array([i.action for i in batch])
                 actions_shape = np.zeros((actions.size, actions.max()+1))
