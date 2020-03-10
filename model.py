@@ -44,7 +44,7 @@ class atari_model:
         optimizer = keras.optimizers.RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
         self.model.compile(optimizer, loss='mse')
 
-        self._load_weights()
+        #self._load_weights()
 
     def reset_episode_scores(self):
         if self.reward_hiscore < self.episode_reward:
@@ -64,8 +64,13 @@ class atari_model:
         else:
             return (1111111.11-iteration)/1111111.11
 
-    def previous_state(self):
-        return self.state_list[len(self.state_list)-4:len(self.state_list)]
+    def previous_state(self, steps_back):
+        if steps_back == -1:
+            return self.state_list[len(self.state_list)-4:len(self.state_list)]
+        elif steps_back == -2:
+            return self.state_list[len(self.state_list)-8:len(self.state_list)-4]
+        else:
+            raise Exception("steps_back must be integers either -1 or -2")
 
     def choose_best_action(self, state):
         actions = np.ones((1, self.n_actions))
@@ -73,93 +78,106 @@ class atari_model:
         output = self.model.predict([state, actions])
         return np.argmax(output)
 
-    def warmup(self, env, iterations, memory):
-        print("Beginning Warmup")
-        for i in range(iterations):
-            frame = preprocess(env.reset())
-            is_done = False
-            self.state_list = [frame]
+    def run_game(self, env, ring_buf):
+        frame = preprocess(env.reset())
+        is_done = False
+        self.state_list = [frame]
 
-            # Need 4 Frames for initial state and following 4 Frames for next state
-            for i in range(7):
-                new_frame, reward, is_done, _ = env.step(env.action_space.sample())
-                self.episode_reward += transform_reward(reward)
-                self.state_list.append(preprocess(new_frame))
-                env.render()
-
-                if is_done:
-                    self.reset_episode_scores()
-                    break
-
-            while not is_done:
-                action = env.action_space.sample()
-                new_frame, reward, is_done, _ = env.step(action)
-                self.episode_reward += transform_reward(reward)
-                self.state_list.append(preprocess(new_frame))
-                env.render()
-
-                mem = IndividualMemory(
-                    self.state_list[len(self.state_list)-8:len(self.state_list)-4], 
-                    action, 
-                    self.state_list[len(self.state_list)-4:len(self.state_list)], 
-                    transform_reward(reward), 
-                    is_done)
-                memory.append(mem)
-
-                if is_done:
-                    self.reset_episode_scores()
-        
-        print("Warmup Completed")
-            
-
-    def q_iteration(self, env, state, iteration, memory):
-        # Choose epsilon based on the iteration
-        epsilon = self.get_epsilon_for_iteration(iteration)
-
-        # Play one game iteration (note: according to the next paper, you should actually play 4 times here)
-        for i in range(4):
-            if random.random() < epsilon:
-                action = env.action_space.sample()
-            else:
-                action = self.choose_best_action([state, self.actions])
-
-            new_frame, reward, is_done, _ = env.step(action)
+        # Need 4 Frames for initial state and following 4 Frames for next state
+        for i in range(6):
+            new_frame, reward, is_done, _ = env.step(env.action_space.sample())
             self.episode_reward += transform_reward(reward)
-
             self.state_list.append(preprocess(new_frame))
             env.render()
 
             if is_done:
                 self.reset_episode_scores()
                 break
+            
+        while not is_done:
+            action = env.action_space.sample()
+            new_frame, reward, is_done, _ = env.step(action)
+            self.episode_reward += transform_reward(reward)
+            self.state_list.append(preprocess(new_frame))
+            env.render()
 
-        mem = IndividualMemory(
-            state, 
-            action, 
-            self.previous_state(),
-            transform_reward(reward), 
-            is_done
-        )
-        memory.append(mem)
+            mem = IndividualMemory(
+                self.state_list[len(self.state_list)-8:len(self.state_list)-4], 
+                action, 
+                self.state_list[len(self.state_list)-4:len(self.state_list)], 
+                transform_reward(reward), 
+                is_done
+            )
+            ring_buf.append(mem)
 
-        # Sample and fit
-        sample_mem_size = 32
-        if memory.end >= sample_mem_size:
-            batch = memory.sample_batch(sample_mem_size)
-            start_states = np.array([i.start_state for i in batch])
+            if is_done:
+                self.reset_episode_scores()
 
-            actions = np.array([i.action for i in batch])
-            actions_shape = np.zeros((actions.size, actions.max()+1))
-            actions_shape[np.arange(actions.size), actions] = 1
-            actions = actions_shape
+    def warmup(self, env, num_games, my_ring_buf):
+        print("Beginning Warmup")
+        for i in range(num_games):
+            self.run_game(env, my_ring_buf)
+        print("Warmup Completed")
+            
 
-            rewards = np.array([i.reward for i in batch])
-            next_states = np.array([i.new_state for i in batch])
-            is_terminal = np.array([i.is_done for i in batch])
+    def q_iteration(self, env, iteration, memory):
+        # Get starting state
+        is_done = False
+        for i in range(3):
+            action = env.action_space.sample()
+            new_frame, reward, is_done, _ = env.step(action)
+            self.episode_reward += transform_reward(reward)
+            self.state_list.append(preprocess(new_frame))
+            iteration+=1
+            env.render()
 
-            self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal) 
+        while not is_done:
+            if random.random() < self.get_epsilon_for_iteration(iteration):
+                action = env.action_space.sample()
+            else:
+                action = self.choose_best_action([self.previous_state(-1), self.actions])
+            
+            new_frame, reward, is_done, _ = env.step(action)
+            self.episode_reward += transform_reward(reward)
+            self.state_list.append(preprocess(new_frame))
+            iteration+=1
+            env.render()
 
-        return is_done
+            # Add memory if there is enough data to do so
+            if len(self.state_list) > 7:
+                mem = IndividualMemory(
+                    self.previous_state(-2), 
+                    action, 
+                    self.previous_state(-1),
+                    transform_reward(reward), 
+                    is_done
+                )
+                memory.append(mem)
+
+            # Sample and fit
+            sample_mem_size = 32
+            if memory.n_valid_elements >= sample_mem_size:
+                batch = memory.sample_batch(sample_mem_size)
+
+                start_states = np.array([i.start_state for i in batch])
+                print(start_states.ndim) # debugging, FIXME
+                if start_states.ndim == 1:
+                    print(start_states)
+
+                actions = np.array([i.action for i in batch])
+                actions_shape = np.zeros((actions.size, actions.max()+1))
+                actions_shape[np.arange(actions.size), actions] = 1
+                actions = actions_shape
+
+                rewards = np.array([i.reward for i in batch])
+                next_states = np.array([i.new_state for i in batch])
+                is_terminal = np.array([i.is_done for i in batch])
+
+                # FIXME make things like gamma into constants to be read in using JSON
+                self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal)
+        
+        self.reset_episode_scores()
+        return iteration
 
     def fit_batch(self, gamma, start_states, actions, rewards, next_states, is_terminal):
         """Do one deep Q learning iteration.
