@@ -107,6 +107,7 @@ class atari_model:
                 if is_done:
                     self.reset_episode_scores()
         
+        self._save_weights()
         print("Warmup Completed")
             
 
@@ -187,10 +188,10 @@ class atari_model:
         if not self.load_file_path:
             return
         path = self.load_file_path + "model.h5"
-        self.load_weights(path)
+        self.model.load_weights(path)
 
     def _save_weights(self):
         if not self.load_file_path:
             return
         path = self.load_file_path + "model.h5"
-        self.save_weights(path)
+        self.model.save_weights(path)
