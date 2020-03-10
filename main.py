@@ -42,4 +42,5 @@ for i in range(1000000):
     model.state_list.append(preprocess(new_frame))
     is_done = model.q_iteration(env, model.previous_state(), i, memory_storage)
 
+model._save_weights()
 env.close()

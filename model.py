@@ -109,7 +109,6 @@ class atari_model:
                 if is_done:
                     self.reset_episode_scores()
         
-        self._save_weights()
         print("Warmup Completed")
             
 
