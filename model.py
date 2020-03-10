@@ -10,6 +10,9 @@ class atari_model:
         self.state_list = []
         self.actions = actions
         self.n_actions = n_actions
+        self.episode_reward = 0
+        self.reward_hiscore = 0
+
         ATARI_SHAPE = (4, 105, 80)
 
         # With the functional API we need to define the inputs.
@@ -39,6 +42,12 @@ class atari_model:
         self.model = keras.models.Model(inputs=[frames_input, actions_input], outputs=filtered_output)
         optimizer = keras.optimizers.RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
         self.model.compile(optimizer, loss='mse')
+
+    def reset_episode_scores(self):
+        if self.reward_hiscore < self.episode_reward:
+            self.reward_hiscore = self.episode_reward
+            print("New hiscore {}".format(self.reward_hiscore))
+        self.episode_reward = 0
     
     def get_epsilon_for_iteration(self, iteration):
         """
@@ -69,18 +78,20 @@ class atari_model:
             self.state_list = [frame]
 
             # Need 4 Frames for initial state and following 4 Frames for next state
-            for i in range(6):
+            for i in range(7):
                 new_frame, reward, is_done, _ = env.step(env.action_space.sample())
+                self.episode_reward += transform_reward(reward)
                 self.state_list.append(preprocess(new_frame))
                 env.render()
 
+                if is_done:
+                    self.reset_episode_scores()
+                    break
+
             while not is_done:
-                new_frame, reward, is_done, _ = env.step(env.action_space.sample())
-                self.state_list.append(preprocess(new_frame))
-                env.render()
-                
                 action = env.action_space.sample()
                 new_frame, reward, is_done, _ = env.step(action)
+                self.episode_reward += transform_reward(reward)
                 self.state_list.append(preprocess(new_frame))
                 env.render()
 
@@ -93,7 +104,7 @@ class atari_model:
                 memory.append(mem)
 
                 if is_done:
-                    break
+                    self.reset_episode_scores()
         
         print("Warmup Completed")
             
@@ -110,14 +121,22 @@ class atari_model:
                 action = self.choose_best_action([state, self.actions])
 
             new_frame, reward, is_done, _ = env.step(action)
-
-            if is_done:
-                break
+            self.episode_reward += transform_reward(reward)
 
             self.state_list.append(preprocess(new_frame))
             env.render()
 
-        mem = IndividualMemory(state, action, self.state_list[len(self.state_list)-4:len(self.state_list)], transform_reward(reward), is_done)
+            if is_done:
+                self.reset_episode_scores()
+                break
+
+        mem = IndividualMemory(
+            state, 
+            action, 
+            self.previous_state(),
+            transform_reward(reward), 
+            is_done
+        )
         memory.append(mem)
 
         # Sample and fit
