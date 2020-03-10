@@ -23,7 +23,7 @@ class RingBuf:
         self.data[self.end] = element
         self.end = (self.end + 1) % len(self.data)
 
-        if self.n_valid_elements < size:
+        if self.n_valid_elements < self.size:
             self.n_valid_elements += 1
 
         # end == start and yet we just added one element. This means the buffer has one
