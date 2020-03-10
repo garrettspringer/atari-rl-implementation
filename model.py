@@ -44,6 +44,8 @@ class atari_model:
         optimizer = keras.optimizers.RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
         self.model.compile(optimizer, loss='mse')
 
+        self._load_weights()
+
     def reset_episode_scores(self):
         if self.reward_hiscore < self.episode_reward:
             self.reward_hiscore = self.episode_reward
