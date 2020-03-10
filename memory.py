@@ -16,10 +16,16 @@ class RingBuf:
         self.data = [None] * (size + 1)
         self.start = 0
         self.end = 0
+        self.n_valid_elements = 0
+        self.size = size
 
     def append(self, element):
         self.data[self.end] = element
         self.end = (self.end + 1) % len(self.data)
+
+        if self.n_valid_elements < size:
+            self.n_valid_elements += 1
+
         # end == start and yet we just added one element. This means the buffer has one
         # too many element. Remove the first element by incrementing start.
         if self.end == self.start:
@@ -28,7 +34,7 @@ class RingBuf:
     def sample_batch(self, num_of_elements):
         batch = []
         for i in range(num_of_elements):
-            batch.append(self.__getitem__(randint(self.start, self.end-1)))
+            batch.append(self.__getitem__(randint(0, self.n_valid_elements)))
         return batch
         
     def __getitem__(self, idx):
