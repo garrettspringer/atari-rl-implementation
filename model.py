@@ -12,6 +12,7 @@ class atari_model:
         self.n_actions = n_actions
         self.episode_reward = 0
         self.reward_hiscore = 0
+        self.load_file_path = "weights/"
 
         ATARI_SHAPE = (4, 105, 80)
 
@@ -181,3 +182,15 @@ class atari_model:
             [start_states, actions], actions * Q_values[:, None],
             epochs=1, batch_size=len(start_states), verbose=0
         )
+
+    def _load_weights(self):
+        if not self.load_file_path:
+            return
+        path = self.load_file_path + "model.h5"
+        self.load_weights(path)
+
+    def _save_weights(self):
+        if not self.load_file_path:
+            return
+        path = self.load_file_path + "model.h5"
+        self.save_weights(path)
