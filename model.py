@@ -118,7 +118,6 @@ class atari_model:
         for i in range(num_games):
             self.run_game(env, my_ring_buf)
         print("Warmup Completed")
-            
 
     def q_iteration(self, env, iteration, memory):
         # Get starting state
@@ -135,7 +134,7 @@ class atari_model:
             if random.random() < self.get_epsilon_for_iteration(iteration):
                 action = env.action_space.sample()
             else:
-                action = self.choose_best_action([self.previous_state(-1), self.actions])
+                action = self.choose_best_action([self.previous_state(-1)])
             
             new_frame, reward, is_done, _ = env.step(action)
             self.episode_reward += transform_reward(reward)
@@ -154,23 +153,23 @@ class atari_model:
                 )
                 memory.append(mem)
 
-            # Sample and fit
-            sample_mem_size = 32
-            if memory.n_valid_elements >= sample_mem_size:
-                batch = memory.sample_batch(sample_mem_size)
-                start_states = np.array([i.start_state for i in batch])
+        # Sample and fit for experience replay at the end of each episode
+        sample_mem_size = 32
+        if memory.n_valid_elements >= sample_mem_size:
+            batch = memory.sample_batch(sample_mem_size)
+            start_states = np.array([i.start_state for i in batch])
 
-                actions = np.array([i.action for i in batch])
-                actions_shape = np.zeros((actions.size, actions.max()+1))
-                actions_shape[np.arange(actions.size), actions] = 1
-                actions = actions_shape
+            actions = np.array([i.action for i in batch])
+            actions_shape = np.zeros((actions.size, actions.max()+1))
+            actions_shape[np.arange(actions.size), actions] = 1
+            actions = actions_shape
 
-                rewards = np.array([i.reward for i in batch])
-                next_states = np.array([i.new_state for i in batch])
-                is_terminal = np.array([i.is_done for i in batch])
+            rewards = np.array([i.reward for i in batch])
+            next_states = np.array([i.new_state for i in batch])
+            is_terminal = np.array([i.is_done for i in batch])
 
-                # FIXME make things like gamma into constants to be read in using JSON
-                self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal)
+            # FIXME make things like gamma into constants to be read in using JSON
+            self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal)
         
         self.reset_episode_scores()
         return iteration

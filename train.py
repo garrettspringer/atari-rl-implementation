@@ -20,10 +20,9 @@ if __name__ == "__main__":
     is_done = False
     iteration = 0
     while True:
-        print("Iteration: {}".format(iteration))
         frame = preprocess(env.reset())
         model.state_list = [frame]
-
+        
         iteration = model.q_iteration(env, iteration, memory_storage)
         iteration+=1
 
