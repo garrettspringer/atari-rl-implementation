@@ -153,7 +153,7 @@ class atari_model:
                 )
                 memory.append(mem)
 
-            # Sample and fit for experience replay at the end of each episode
+            # Sample and fit for experience replay at the end of each step
             sample_mem_size = 32
             if memory.n_valid_elements >= sample_mem_size:
                 batch = memory.sample_batch(sample_mem_size)
@@ -168,8 +168,8 @@ class atari_model:
                 next_states = np.array([i.new_state for i in batch])
                 is_terminal = np.array([i.is_done for i in batch])
 
-            # FIXME make things like gamma into constants to be read in using JSON
-            self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal)
+                # FIXME make things like gamma into constants to be read in using JSON
+                self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal)
         
         self.reset_episode_scores()
         return iteration
@@ -186,6 +186,7 @@ class atari_model:
         - is_terminal: numpy boolean array of whether the resulting state is terminal
         """
         # First, predict the Q values of the next states. Note how we are passing ones as the mask.
+        print("fitting batch")
         next_Q_values = self.model.predict([next_states, np.ones(actions.shape)])
         # The Q values of the terminal states is 0 by definition, so override them
         next_Q_values[is_terminal] = 0
