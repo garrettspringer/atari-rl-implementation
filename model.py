@@ -153,20 +153,20 @@ class atari_model:
                 )
                 memory.append(mem)
 
-        # Sample and fit for experience replay at the end of each episode
-        sample_mem_size = 32
-        if memory.n_valid_elements >= sample_mem_size:
-            batch = memory.sample_batch(sample_mem_size)
-            start_states = np.array([i.start_state for i in batch])
+            # Sample and fit for experience replay at the end of each episode
+            sample_mem_size = 32
+            if memory.n_valid_elements >= sample_mem_size:
+                batch = memory.sample_batch(sample_mem_size)
+                start_states = np.array([i.start_state for i in batch])
 
-            actions = np.array([i.action for i in batch])
-            actions_shape = np.zeros((actions.size, actions.max()+1))
-            actions_shape[np.arange(actions.size), actions] = 1
-            actions = actions_shape
+                actions = np.array([i.action for i in batch])
+                actions_shape = np.zeros((actions.size, actions.max()+1))
+                actions_shape[np.arange(actions.size), actions] = 1
+                actions = actions_shape
 
-            rewards = np.array([i.reward for i in batch])
-            next_states = np.array([i.new_state for i in batch])
-            is_terminal = np.array([i.is_done for i in batch])
+                rewards = np.array([i.reward for i in batch])
+                next_states = np.array([i.new_state for i in batch])
+                is_terminal = np.array([i.is_done for i in batch])
 
             # FIXME make things like gamma into constants to be read in using JSON
             self.fit_batch(0.99, start_states, actions, rewards, next_states, is_terminal)
