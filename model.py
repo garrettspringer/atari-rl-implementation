@@ -186,7 +186,6 @@ class atari_model:
         - is_terminal: numpy boolean array of whether the resulting state is terminal
         """
         # First, predict the Q values of the next states. Note how we are passing ones as the mask.
-        print("fitting batch")
         next_Q_values = self.model.predict([next_states, np.ones(actions.shape)])
         # The Q values of the terminal states is 0 by definition, so override them
         next_Q_values[is_terminal] = 0

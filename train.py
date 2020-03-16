@@ -14,8 +14,8 @@ if __name__ == "__main__":
     max_num_memories = 1000000
     memory_storage = RingBuf(max_num_memories)
 
-    warmup_size = 25
-    model.warmup(env, warmup_size, memory_storage)
+    #warmup_size = 50000
+    #model.warmup(env, warmup_size, memory_storage)
 
     is_done = False
     iteration = 0
@@ -26,5 +26,6 @@ if __name__ == "__main__":
         iteration = model.q_iteration(env, iteration, memory_storage)
         iteration+=1
 
-    model._save_weights()
+        model._save_weights()
+
     env.close()
