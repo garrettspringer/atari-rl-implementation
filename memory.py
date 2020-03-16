@@ -57,12 +57,25 @@ class RingBuf:
             reward.append(mem.reward)
             is_done.append(mem.is_done)
 
-
-        data_set = f.create_dataset("start_state", data=start_state)
+        f.create_dataset("start_state", data=start_state)
         f.create_dataset("action", data=action)
         f.create_dataset("new_state", data=new_state)
         f.create_dataset("reward", data=reward)
         f.create_dataset("is_done", data=is_done)
+
+    def load_memory(self):
+        load_file_path = "buffer_memory/saved_memories.hdf5"
+        f = h5py.File(load_file_path, "r")
+
+        start_state = f["start_state"]
+        action = f["action"]
+        new_state = f["new_state"]
+        reward = f["reward"]
+        is_done = f["is_done"]
+
+        for i in range(len(start_state)):
+            mem = IndividualMemory(start_state[i], action[i], new_state[i], reward[i], is_done[i])
+            self.append(mem)
         
     def __getitem__(self, idx):
         return self.data[(self.start + idx) % len(self.data)]
